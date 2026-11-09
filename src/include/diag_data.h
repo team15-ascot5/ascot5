@@ -193,11 +193,59 @@ typedef struct
 } DiagHist;
 
 /**
+ * Available histogram axis coordinates.
+ */
+typedef enum
+{
+    MOMENT_DENSITY,       /**< Particle density [1/m^3].                      */
+    MOMENT_CHARGEDENSITY, /**< Charge density [e/m^3].                        */
+    MOMENT_ENERGYDENSITY, /**< Energy density [J/m^3].                        */
+    MOMENT_PPAR,          /**< Parallel pressure [J/m^3].                     */
+    MOMENT_PPERP,         /**< Perpendicular pressure [J/m^3].                */
+    MOMENT_JPAR,          /**< Parallel current [e/(m^2*s)].                  */
+    MOMENT_JTOR,          /**< Toroidal current [e/(m^2*s)].                  */
+    MOMENT_NUM,           /**< Number of moments.                             */
+} MomentType;
+
+/**
+ * Moment data.
+ * The bins are stored as a flattened array and indexed by bin_index(rho).
+ * The moment i for rho is: values[math_bin_index(rho, axis.n, axis.min, axis.max)*MOMENT_NUM+i]. 
+ */
+typedef struct 
+{
+    /**
+     * Total number of moments calculated.
+     */
+    size_t num_moments;
+
+    /**
+     * The rho axis.
+     */
+    HistAxis axis;
+
+    /**
+     * List of selected moments of length num_moments.
+     */
+    MomentType *chosen_moments;
+
+    /**
+     * The 1d-moment bins.
+     * 
+     * Each bin stores a vector of moments of length num_moments.
+     * The bins are laid out in order of their rho so the second element of
+     * rho would be: values[math_bin_index(rho, axis.n, axis.min, axis.max)*MOMENT_NUM+1]. 
+     */
+    real *values;
+} DiagMoment;
+
+/**
  * Diagnostics data struct.
  */
 typedef struct
 {
     DiagOrbit *orbit; /**< Orbit diagnostics.                                 */
+    DiagMoment *moment;/**< Moment diagnostics.                               */
     DiagHist **hist;  /**< List of histogram diagnostics to collect.          */
     size_t nhist;     /**< Number of histogram diagnostics.                   */
 } Diagnostics;
