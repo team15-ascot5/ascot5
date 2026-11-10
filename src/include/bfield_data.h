@@ -41,6 +41,19 @@ typedef struct
 } BfieldCartesian;
 
 /**
+ * Linear interpolated 3D magnetic field data.
+ */
+typedef struct
+{
+    real axisrz[2];    /**< Magnetic axis (R, z) coordinates [m].             */
+    real psilimits[2]; /**< Poloidal flux at axis and separatrix [Wb/rad].    */
+    Linear2D psi;      /**< Poloidal flux Linear interpolant [Wb/rad].        */
+    Linear3D br;       /**< Linear interpolant for R component of B [T].      */
+    Linear3D bz;       /**< Linear interpolant for z component of B [T].      */
+    Linear3D bphi;     /**< Linear interpolant for phi component of B [T].    */
+} BfieldLinear3D;
+
+/**
  * Analytic magnetic field data.
  */
 typedef struct
@@ -111,6 +124,7 @@ typedef struct
 typedef struct
 {
     BfieldCartesian *cartesian;     /**< Cartesian data.                      */
+    BfieldLinear3D *linear;         /**< Linear data.                         */
     BfieldAnalytical *analytical;   /**< Analytical data.                     */
     BfieldSpline2D *spline2d;       /**< Spline 2D data.                      */
     BfieldSpline3D *spline3d;       /**< Spline 3D data.                      */
