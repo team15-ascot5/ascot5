@@ -7,11 +7,13 @@
     ~BfieldAnalytical
     ~BfieldSpline2D
     ~BfieldSpline3D
+    ~BfieldLinear3D
     ~BfieldStellarator
     ~CreateBfieldMixin.create_bfieldcartesian
     ~CreateBfieldMixin.create_bfieldanalytical
     ~CreateBfieldMixin.create_bfieldspline2d
     ~CreateBfieldMixin.create_bfieldspline3d
+    ~CreateBfieldMixin.create_bfieldlinear3d
     ~CreateBfieldMixin.create_bfieldstellarator
 
 .. rubric:: Classes
@@ -26,6 +28,9 @@
     :members:
 
 .. autoclass:: BfieldSpline3D
+    :members:
+
+.. autoclass:: BfieldLinear3D
     :members:
 
 .. autoclass:: BfieldStellarator
@@ -45,6 +50,7 @@ from . import cartesian
 from . import analytical
 from . import spline2d
 from . import spline3d
+from . import linear3d
 from . import stellarator
 from .cartesian import BfieldCartesian
 from .analytical import BfieldAnalytical
@@ -70,6 +76,7 @@ class Bfield(ctypes.Structure):
         ("analytical", ctypes.POINTER(analytical.Struct)),
         ("spline2d", ctypes.POINTER(spline2d.Struct)),
         ("spline3d", ctypes.POINTER(spline3d.Struct)),
+        ("linear3d", ctypes.POINTER(linear3d.Struct)),
         ("stellarator", ctypes.POINTER(stellarator.Struct)),
         ("type", ctypes.c_int32),
     ]
@@ -81,6 +88,7 @@ class CreateBfieldMixin(
     analytical.CreateMixin,
     spline2d.CreateMixin,
     spline3d.CreateMixin,
+    linear3d.CreateMixin,
     stellarator.CreateMixin,
     ):
     """Mixin class used by :class:`.AscotData` to create magnetic field input.
