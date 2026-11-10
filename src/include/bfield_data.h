@@ -18,7 +18,8 @@ typedef enum Bfield_type
     BFIELD_CARTESIAN = 1, /**< Corresponds to BfieldCartesian.                */
     BFIELD_ANALYTICAL,    /**< Corresponds to BfieldAnalytical.               */
     BFIELD_SPLINE2D,      /**< Corresponds to BfieldSpline2D.                 */
-    BFIELD_SPLINE3D,      /**< Corresponds to BfieldSpline3D.                 */
+    BFIELD_SPLINE3D,      /**< Corresponds to BfieldSpline3D.                 */    
+    BFIELD_LINEAR3D,      /**< Corresponds to BfieldLinear3D.                 */
     BFIELD_STELLARATOR,   /**< Corresponds to BfieldStellarator.              */
 } Bfield_type;
 
@@ -124,7 +125,7 @@ typedef struct
 typedef struct
 {
     BfieldCartesian *cartesian;     /**< Cartesian data.                      */
-    BfieldLinear3D *linear;         /**< Linear data.                         */
+    BfieldLinear3D *linear3d;         /**< Linear 3D data.                         */
     BfieldAnalytical *analytical;   /**< Analytical data.                     */
     BfieldSpline2D *spline2d;       /**< Spline 2D data.                      */
     BfieldSpline3D *spline3d;       /**< Spline 3D data.                      */

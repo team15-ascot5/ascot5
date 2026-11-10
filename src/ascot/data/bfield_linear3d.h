@@ -15,7 +15,7 @@
 #include "parallel.h"
 
 /**
- * Initialize the 3D linear-interpolated tokamak magnetic field data.
+ * Initialize the 3D linear3d-interpolated tokamak magnetic field data.
  *
  * Assigns the fields in the struct with the provided values.
  *

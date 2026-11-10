@@ -50,10 +50,11 @@ from .cartesian import BfieldCartesian
 from .analytical import BfieldAnalytical
 from .spline2d import BfieldSpline2D
 from .spline3d import BfieldSpline3D
+from .linear3d import BfieldLinear3D
 from .stellarator import BfieldStellarator
 
 BfieldType: TypeAlias = (
-    BfieldCartesian | BfieldAnalytical | BfieldSpline2D | BfieldSpline3D |
+    BfieldCartesian | BfieldAnalytical | BfieldSpline2D | BfieldSpline3D | BfieldLinear3D | 
     BfieldStellarator
     )
 """Union of all possible magnetic field types."""
@@ -93,5 +94,6 @@ __all__  = [
     "BfieldAnalytical",
     "BfieldSpline2D",
     "BfieldSpline3D",
+    "BfieldLinear3D",
     "BfieldStellarator",
     ]
