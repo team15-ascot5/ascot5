@@ -288,7 +288,7 @@ err_t Bfield_eval_b_db(
         b_db[14] = 0.0;
         break;
     case BFIELD_LINEAR3D:
-        err = BfieldSpline3D_eval_b_db(b_db, r, phi, z, bfield->linear3d);
+        err = BfieldLinear3D_eval_b_db(b_db, r, phi, z, bfield->linear3d);
         b_db[12] = 0.0;
         b_db[13] = 0.0;
         b_db[14] = 0.0;
