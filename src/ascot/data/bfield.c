@@ -6,6 +6,7 @@
 #include "bfield_cartesian.h"
 #include "bfield_spline2d.h"
 #include "bfield_spline3d.h"
+#include "bfield_linear3d.h"
 #include "bfield_stellarator.h"
 #include "defines.h"
 #include <stdio.h>

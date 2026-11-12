@@ -17,26 +17,25 @@ int BfieldLinear3D_init(
     real br[bnr * bnz * bnphi], real bz[bnr * bnz * bnphi],
     real bphi[bnr * bnz * bnphi])
 {
-    int err = 0;
     bfield->axisrz[0] = axisrz[0];
     bfield->axisrz[1] = axisrz[1];
     bfield->psilimits[0] = psilimits[0];
     bfield->psilimits[1] = psilimits[1];
 
-    err += Linear2D_init(
+    Linear2D_init(
         &bfield->psi, pnr, pnz, NATURALBC, NATURALBC, prlim,
         pzlim, psi);
-    err += Linear3D_init(
+    Linear3D_init(
         &bfield->br, bnr, bnphi, bnz, NATURALBC, PERIODICBC, NATURALBC,
         brlim, bphilim, bzlim, br);
-    err += Linear3D_init(
+    Linear3D_init(
         &bfield->bz, bnr, bnphi, bnz, NATURALBC, PERIODICBC, NATURALBC,
         brlim, bphilim, bzlim, bz);
-    err += Linear3D_init(
+    Linear3D_init(
         &bfield->bphi, bnr, bnphi, bnz, NATURALBC, PERIODICBC, NATURALBC,
         brlim, bphilim, bzlim, bphi);
 
-    return err;
+    return 0;
 }
 
 void BfieldLinear3D_free(BfieldLinear3D *bfield)
@@ -140,13 +139,13 @@ err_t BfieldLinear3D_eval_b_db(
         err, interperr, ERR_INTERPOLATED_OUTSIDE_RANGE, DATA_BFIELD_LINEAR3D_C);
 
     real psi_dpsi[6];
-    interperr = Linear3D_eval_f_df(psi_dpsi, &bfield->psi, r, z);
+    interperr = Linear2D_eval_f_df(psi_dpsi, &bfield->psi, r, z);
 
     b_db[0] -= psi_dpsi[2] / r;
     b_db[3] += psi_dpsi[2] / (r * r) - psi_dpsi[5] / r;
     b_db[5] -= psi_dpsi[4] / r;
     b_db[2] += psi_dpsi[1] / r;
-    b_db[9] -= psi_dpsi[1] / (r * r) + psi_dpsi[3] / r;
+    b_db[9] -= psi_dpsi[1] / (r * r) - psi_dpsi[3] / r;
     b_db[11] += psi_dpsi[5] / r;
 
     err = ERROR_CHECK(
