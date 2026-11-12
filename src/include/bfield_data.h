@@ -125,10 +125,10 @@ typedef struct
 typedef struct
 {
     BfieldCartesian *cartesian;     /**< Cartesian data.                      */
-    BfieldLinear3D *linear3d;         /**< Linear 3D data.                         */
     BfieldAnalytical *analytical;   /**< Analytical data.                     */
     BfieldSpline2D *spline2d;       /**< Spline 2D data.                      */
     BfieldSpline3D *spline3d;       /**< Spline 3D data.                      */
+    BfieldLinear3D *linear3d;       /**< Linear 3D data.                      */
     BfieldStellarator *stellarator; /**< Stellarator data.                    */
     Bfield_type type;               /**< Current magnetic field type.         */
 } Bfield;
