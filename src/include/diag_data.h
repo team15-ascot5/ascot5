@@ -193,7 +193,7 @@ typedef struct
 } DiagHist;
 
 /**
- * Available histogram axis coordinates.
+ * Available moment quantities.
  */
 typedef enum
 {
