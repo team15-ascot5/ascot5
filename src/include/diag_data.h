@@ -198,12 +198,14 @@ typedef struct
 typedef enum
 {
     MOMENT_DENSITY,       /**< Particle density [1/m^3].                      */
-    MOMENT_CHARGEDENSITY, /**< Charge density [e/m^3].                        */
     MOMENT_ENERGYDENSITY, /**< Energy density [J/m^3].                        */
-    MOMENT_PPAR,          /**< Parallel pressure [J/m^3].                     */
-    MOMENT_PPERP,         /**< Perpendicular pressure [J/m^3].                */
+    MOMENT_ENERGYDENSITYPAR, /**< Parallel energy density [J/m^3].            */
     MOMENT_JPAR,          /**< Parallel current [e/(m^2*s)].                  */
-    MOMENT_JTOR,          /**< Toroidal current [e/(m^2*s)].                  */
+    /**MOMENT_JTOR,          /**< Toroidal current [e/(m^2*s)].                  */
+    MOMENT_CPDEP,         /**< Collisional power deposition to plasma [].     */
+    MOMENT_TORTORQ,       /**< Toroidal torque [].                            */
+    MOMENT_TORCTORQ,      /**< Toroidal collisional torque [].                */
+    MOMENT_TORCTORQPPHI,  /**< Toroidal torque from changes in toroidal canonical momentum P_phi [].*/
     MOMENT_NUM,           /**< Number of moments.                             */
 } MomentType;
 
