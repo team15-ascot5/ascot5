@@ -1,6 +1,6 @@
 /**
  * @file bfield_linear3d.h
- * Linear-interpolated perturbed tokamak magnetic field implementation.
+ * Linear-interpolated magnetic field implementation.
  *
  * Poloidal flux is evaluated by interpolating an uniform 2D table while
  * magnetic field components are evaluated by interpolating an uniform 3D
@@ -43,15 +43,14 @@
  *        Layout: (Ri, phij, zk) = [i*nz*nphi + j*nz + k] (C order).
  * @param bphi Tabulated values of phi component of B [T].
  *        Layout: (Ri, phij, zk) = [i*nz*nphi + j*nz + k] (C order).
- *
- * @return Zero if the initialization succeeded.
  */
-int BfieldLinear3D_init(BfieldLinear3D* bfield, size_t pnr, size_t pnz,
-                        size_t bnr, size_t bnz, size_t bnphi, real prlim[2],
-                        real pzlim[2], real brlim[2], real bzlim[2],
-                        real bphilim[2], real axisrz[2], real psilimits[2],
-                        real psi[pnr * pnz], real br[bnr * bnz * bnphi],
-                        real bz[bnr * bnz * bnphi], real bphi[bnr * bnz * bnphi]
+void BfieldLinear3D_init(BfieldLinear3D* bfield, size_t pnr, size_t pnz,
+                         size_t bnr, size_t bnz, size_t bnphi, real prlim[2],
+                         real pzlim[2], real brlim[2], real bzlim[2],
+                         real bphilim[2], real axisrz[2], real psilimits[2],
+                         real psi[pnr * pnz], real br[bnr * bnz * bnphi],
+                         real bz[bnr * bnz * bnphi],
+                         real bphi[bnr * bnz * bnphi]
 
 );
 
