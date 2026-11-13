@@ -6,7 +6,7 @@ import numpy as np
 from a5py.exceptions import AscotNoDataException
 from a5py.data.access import OutputVariant, Leaf
 from a5py.data.marker.state import MarkerState
-from a5py.data import Orbit, Hist, SimulationOptions
+from a5py.data import Orbit, Hist, Moment, SimulationOptions
 
 import a5py.plotting as a5plt
 
@@ -28,6 +28,9 @@ class Run(OutputVariant):
             elif name == "orbit":
                 self._diagnostics[name] = Orbit()
                 self._diagnostics[name]._file = self._file.access_data("orbit")
+            elif name == "moment":
+                self._diagnostics[name] = Moment()
+                self._diagnostics[name]._file = self._file.access_data("moment")
             elif "hist" in name:
                 self._diagnostics[name] = Hist()
                 self._diagnostics[name]._file = self._file.access_data(name)
@@ -38,6 +41,8 @@ class Run(OutputVariant):
 
         for i, hist in enumerate(self.options.histograms):
             self._diagnostics[f"hist_{i}"]._params = hist
+        if "moment" in self._diagnostics:
+            self._diagnostics["moment"]._params = self.options.moments
 
     def _require(self, *args):
         """Check if required data is present and raise exception if not.
@@ -68,6 +73,9 @@ class Run(OutputVariant):
                 diag.save(file)
             if name == "orbit":
                 file = self._file.access_data("orbit")
+                diag.save(file)
+            if name == "moment":
+                file = self._file.access_data("moment")
                 diag.save(file)
             if "hist" in name:
                 file = self._file.access_data(name)
@@ -184,6 +192,31 @@ class Run(OutputVariant):
 
     def getdist(self, idx, dimensions):
         return self._diagnostics[f"hist_{idx}"].extract(dimensions)
+    
+    def getmoment(
+            self, *moments: str,
+            volume: Optional[np.ndarray | unyt.unyt_array]=None,
+            ) -> unyt.unyt_array | tuple[unyt.unyt_array, ...]:
+        """Return radial profiles of distribution moments.
+
+        Parameters
+        ----------
+        *moments : str
+            Names of the moments (see ``a5py.data.options.MOMENTS``) or "rho"
+            for the rho bin centers.
+        volume : array_like (rho_bins,), optional
+            Volume of each rho shell [m^3].
+
+            If given, the collected sums are divided by the volume to give
+            the physical moments (e.g. particle density in 1/m^3).
+
+        Returns
+        -------
+        *val : unyt_array (rho_bins,) or tuple(unyt_array)
+            The profiles in the order they were queried.
+        """
+        self._require("moment")
+        return self._diagnostics["moment"].extract(*moments, volume=volume)
 
     def plotorbit_trajectory(
             self,
@@ -486,6 +519,9 @@ class Run(OutputVariant):
         orbit = Orbit.from_params(mrk.n, params.orbit)
         if orbit is not None:
             run._diagnostics["orbit"] = orbit
+        moment = Moment.from_params(params.moments)
+        if moment is not None:
+            run._diagnostics["moment"] = moment
         for i, h in enumerate(params.histograms):
             run._diagnostics[f"hist_{i}"] = Hist.from_params(h)
         run._options = params
