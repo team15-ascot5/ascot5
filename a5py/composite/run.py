@@ -4,9 +4,10 @@ import unyt
 import numpy as np
 
 from a5py.exceptions import AscotNoDataException
-from a5py.data.access import OutputVariant, Leaf
+from a5py.data.access import OutputVariant, Leaf, Status
 from a5py.data.marker.state import MarkerState
 from a5py.data import Orbit, Hist, Moment, SimulationOptions
+from a5py.engine.auxiliary import rhovolume
 
 import a5py.plotting as a5plt
 
@@ -195,20 +196,21 @@ class Run(OutputVariant):
     
     def getmoment(
             self, *moments: str,
-            volume: Optional[np.ndarray | unyt.unyt_array]=None,
+            raw: bool=False,
             ) -> unyt.unyt_array | tuple[unyt.unyt_array, ...]:
         """Return radial profiles of distribution moments.
+
+        The collected sums are divided by the volume of each rho shell, which
+        is computed from the magnetic field used in the simulation.
 
         Parameters
         ----------
         *moments : str
             Names of the moments (see ``a5py.data.options.MOMENTS``) or "rho"
             for the rho bin centers.
-        volume : array_like (rho_bins,), optional
-            Volume of each rho shell [m^3].
-
-            If given, the collected sums are divided by the volume to give
-            the physical moments (e.g. particle density in 1/m^3).
+        raw : bool, optional
+            Return the collected sums in each rho shell instead of dividing
+            them by the shell volume.
 
         Returns
         -------
@@ -216,7 +218,17 @@ class Run(OutputVariant):
             The profiles in the order they were queried.
         """
         self._require("moment")
-        return self._diagnostics["moment"].extract(*moments, volume=volume)
+        moment = self._diagnostics["moment"]
+        volume = None
+        if not raw:
+            bfield = self["bfield"]
+            staged = bfield.status & Status.STAGED
+            if not staged:
+                bfield.stage()
+            volume = rhovolume(bfield, moment.rho)
+            if not staged:
+                bfield.unstage()
+        return moment.extract(*moments, volume=volume)
 
     def plotorbit_trajectory(
             self,

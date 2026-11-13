@@ -396,8 +396,8 @@ class MomentParams(ParameterClass):
     Attributes
     ----------
     rho_bins : int
-        Number of rho bins on the interval
-    """
+        Number of rho bins on the interval: (>= 0), default=0.
+   """
 
     rho_bins: int = 0
 
