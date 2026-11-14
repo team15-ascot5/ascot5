@@ -201,7 +201,7 @@ typedef enum
     MOMENT_ENERGYDENSITY, /**< Energy density [J/m^3].                        */
     MOMENT_ENERGYDENSITYPAR, /**< Parallel energy density [J/m^3].            */
     MOMENT_JPAR,          /**< Parallel current [e/(m^2*s)].                  */
-    /**MOMENT_JTOR,          /**< Toroidal current [e/(m^2*s)].                  */
+    MOMENT_JTOR,          /**< Toroidal current [e/(m^2*s)].                  */
     MOMENT_CPDEP,         /**< Collisional power deposition to plasma [].     */
     MOMENT_TORTORQ,       /**< Toroidal torque [].                            */
     MOMENT_TORCTORQ,      /**< Toroidal collisional torque [].                */
