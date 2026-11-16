@@ -225,13 +225,15 @@ def process_query_points(r, phi, z, t, grid):
     if grid:
         if any(arr.squeeze().ndim > 1 for arr in (r, phi, z, t)):
             raise ValueError("Grid inputs must be 1D arrays")
-        R, PHI, Z, T = np.meshgrid(
-            r.ravel(), phi.ravel(), z.ravel(), t.ravel(), indexing="ij"
+        # Meshgrid doesn't ensure that the arrays are C_CONTIGUOUS, so we make
+        # C_CONTIGUOUS copies (np.ascontiguousarray and unyt_array.copy alone
+        # would drop the units or ignore the order)
+        return tuple(
+            unyt.unyt_array(np.ascontiguousarray(arr), arr.units)
+            for arr in np.meshgrid(
+                r.ravel(), phi.ravel(), z.ravel(), t.ravel(), indexing="ij"
+                )
             )
-        # Meshgrid doesn't ensure that arrays are C_CONTIGUOUS, and in fact Z
-        # isn't, so we make a C_CONTIGUOUS copy.
-        Z = np.ascontiguousarray(Z)
-        return R, PHI, Z, T
 
     shapes = [arr.shape for arr in (r, phi, z, t)]
     nonsingletons = [s for s in shapes if s != ()]

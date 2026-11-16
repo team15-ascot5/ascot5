@@ -51,9 +51,11 @@ def test_init_return_array(units):
     ((1*unyt.m, 5*unyt.deg, 2*unyt.m, 3*unyt.s), False),
     ((unyt.unyt_array([1, 2], "m"), 5*unyt.deg, 2*unyt.m, 3*unyt.s), False),
     ((unyt.unyt_array([1, 2], "m"), 5*unyt.deg, unyt.unyt_array([1, 2, 3], "m"), 3*unyt.s), False),
+    ((unyt.unyt_array([1, 2], "m"), unyt.unyt_array([0, 5, 10], "deg"), unyt.unyt_array([1, 2, 3, 4], "m"), 3*unyt.s), False),
     ((unyt.unyt_array([[1, 2], [1, 2]], "m"), 5*unyt.deg, 2*unyt.m, 3*unyt.s), True),
     ],
-    ids=["all-singleton", "one-array", "arrays-of-different-size", "not-1d-array"],
+    ids=["all-singleton", "one-array", "arrays-of-different-size", "all-arrays",
+         "not-1d-array"],
 )
 def test_process_query_points_withgrid(inputs, invalid_shape):
     if invalid_shape:
@@ -62,8 +64,10 @@ def test_process_query_points_withgrid(inputs, invalid_shape):
         return
     arrshape = tuple(var.size for var in inputs)
     r, phi, z, t = interpolate.process_query_points(*inputs, grid=True)
-    assert str(phi.units) == "rad"
+    assert [str(arr.units) for arr in (r, phi, z, t)] == ["m", "rad", "m", "s"]
     assert all(arr.shape == arrshape for arr in (r, phi, z, t))
+    # The arrays are passed to C as such
+    assert all(arr.flags["C_CONTIGUOUS"] for arr in (r, phi, z, t))
 
 
 @pytest.mark.parametrize("inputs, invalid_shape", [
