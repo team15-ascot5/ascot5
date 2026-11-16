@@ -42,6 +42,10 @@ def init_fun(name, *argtypes, restype=None):
     fun.restype = restype
 
 
+NATURALBC, PERIODICBC = 0, 1
+"""Boundary conditions of the interpolants (BoundaryCondition in interp_data.h)."""
+
+
 def input_category(cls):
 
     def use(self, variant):
@@ -156,7 +160,8 @@ class DataStruct(ctypes.Structure):
 
         The uniform grids in libascot.so are stored as ``(xlim, nx)``.
         This function reads the values and converts them to (read-only) grid
-        array.
+        array. For periodic coordinates ``xlim`` spans the whole period and the
+        endpoint is not included in the grid.
 
         Parameters
         ----------
@@ -179,11 +184,13 @@ class DataStruct(ctypes.Structure):
         struct = self if member is None else getattr(self, member)
         if index is not None:
             struct = struct[index]
+        n = getattr(struct, f"n{coordinate}")
+        periodic = getattr(struct, f"{coordinate}bc", NATURALBC) == PERIODICBC
         grid = np.linspace(
             getattr(struct, f"{coordinate}lim")[0],
             getattr(struct, f"{coordinate}lim")[1],
-            getattr(struct, f"n{coordinate}"),
-        )
+            n + periodic,
+        )[:n]
         grid.flags.writeable = False
         return unyt.unyt_array(grid, units)
 
