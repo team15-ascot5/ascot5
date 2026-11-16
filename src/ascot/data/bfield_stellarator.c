@@ -36,16 +36,20 @@ int BfieldStellarator_init(
 
     real *c1 = (real *)malloc(naxis * sizeof(real));
     real *c2 = (real *)malloc(naxis * sizeof(real));
+    if (c1 == NULL || c2 == NULL)
+    {
+        free(c1);
+        free(c2);
+        return 1;
+    }
     for (size_t i = 0; i < naxis; i++)
     {
         c1[i] = axisr[i];
         c2[i] = axisz[i];
     }
-    Linear1D_init(
-        &bfield->axisr, naxis, PERIODICBC, axislim, c1);
-    Linear1D_init(
-        &bfield->axisz, naxis, PERIODICBC, axislim, c2);
-    return 0;
+    Linear1D_init(&bfield->axisr, naxis, PERIODICBC, axislim, c1);
+    Linear1D_init(&bfield->axisz, naxis, PERIODICBC, axislim, c2);
+    return err;
 }
 
 void BfieldStellarator_free(BfieldStellarator *bfield)
