@@ -15,7 +15,10 @@ from .template import InputTemplate
 class TransmuteAnalyticalBfieldToSplines(InputTemplate):
 
 
-    def __init__(self, ascot: Ascot, field: BfieldAnalytical, nr:int, rlim, nz:int, zlim):
+    def __init__(
+            self, ascot: Ascot, field: BfieldAnalytical, nr: int, rlim, nz: int,
+            zlim, nphi: int | None = None,
+            ):
         """Transmute analytical magnetic field to spline-interpolated one.
 
         The result is either BfieldSpline2D or BfieldSpline3D depending on
@@ -27,24 +30,63 @@ class TransmuteAnalyticalBfieldToSplines(InputTemplate):
             The Ascot object where the input will be created.
         field : BfieldAnalytical
             The analytical field to transmute.
+        nr : int
+            Number of R grid points.
+        rlim : array_like (2,)
+            Limits of the R grid.
+        nz : int
+            Number of z grid points.
+        zlim : array_like (2,)
+            Limits of the z grid.
+        nphi : int, optional
+            Number of toroidal grid points per ripple period.
+
+            Required when the field has ripple. The ripple repeats with the
+            period 360 deg / nripple, so the grid only covers one period.
         """
         rgrid = np.linspace(rlim[0], rlim[1], nr)
         zgrid = np.linspace(zlim[0], zlim[1], nz)
+        if field.nripple:
+            if nphi is None:
+                raise ValueError(
+                    "The field has ripple, so nphi must be given."
+                )
+            period = 360 / field.nripple
+            phigrid = np.linspace(0, period, nphi + 1)[:-1] * unyt.deg
+        else:
+            phigrid = 0*unyt.deg
 
-        psi, bphi = evaluate(
-            rgrid, 0*unyt.deg, zgrid,
-            0.*unyt.s, "psi", "bphi", grid=True, bfield=field
+        # The evaluated arrays are (R, phi, z, t)
+        psi, br, bphi, bz, psidr, psidz = (
+            arr[..., 0] for arr in evaluate(
+                rgrid, phigrid, zgrid, 0.*unyt.s, "psi", "br", "bphi", "bz",
+                "psidr", "psidz", grid=True, bfield=field,
+            )
         )
-        input_type = "bfieldspline3d" if field.nripple else "bfieldspline2d"
+        # The splines add the poloidal field from psi to the tabulated BR and
+        # Bz, so only the rest of them (e.g. a perturbation) is tabulated.
+        # evaluate returns the psi derivatives without units, so they are
+        # given here.
+        dpsi = unyt.Wb / unyt.rad / unyt.m
+        r = rgrid[:, None, None]
+        br = br + (np.asarray(psidz) * dpsi * unyt.rad / r).to("T")
+        bz = bz - (np.asarray(psidr) * dpsi * unyt.rad / r).to("T")
+
+        # psi is axisymmetric in the splines
         data = {
             "rgrid": rgrid,
             "zgrid": zgrid,
-            "psi": np.squeeze(psi),
-            "bphi": np.squeeze(bphi),
+            "psi": psi[:, 0, :],
             "psilimits": field.psilimits,
             "axisrz": field.axisrz,
         }
-        super().__init__(ascot, input_type, data)
+        if not field.nripple:
+            data.update(bphi=bphi[:, 0, :], br=br[:, 0, :], bz=bz[:, 0, :])
+            super().__init__(ascot, "bfieldspline2d", data)
+            return
+
+        data.update(phigrid=phigrid, bphi=bphi, br=br, bz=bz)
+        super().__init__(ascot, "bfieldspline3d", data)
 
 
 class ToroidallyAveragedBfield(InputTemplate):
