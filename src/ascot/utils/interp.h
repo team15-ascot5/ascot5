@@ -51,8 +51,8 @@
  * @return Index of the grid point at the start of the cell.
  */
 DECLARE_TARGET
-static inline size_t interp_cell(
-    real *t, real x, real xmin, real step, size_t n, int bc)
+static inline size_t
+interp_cell(real *t, real x, real xmin, real step, size_t n, int bc)
 {
     /* With the periodic BC the last cell connects the last and first points */
     real last = n - 1 - (bc == NATURALBC);
