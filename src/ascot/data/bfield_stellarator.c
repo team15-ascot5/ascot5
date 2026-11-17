@@ -18,21 +18,41 @@ int BfieldStellarator_init(
     real psi[pnr * pnz * pnphi], real br[bnr * bnz * bnphi],
     real bz[bnr * bnz * bnphi], real bphi[bnr * bnz * bnphi])
 {
-    int err = 0;
     bfield->psilimits[0] = psilimits[0];
     bfield->psilimits[1] = psilimits[1];
-    err += Spline3D_init(
-        &bfield->psi, pnr, pnphi, pnz, NATURALBC, PERIODICBC, NATURALBC,
-        prlim, pphilim, pzlim, psi);
-    err += Spline3D_init(
-        &bfield->br, bnr, bnphi, bnz, NATURALBC, PERIODICBC, NATURALBC,
-        brlim, bphilim, bzlim, br);
-    err += Spline3D_init(
-        &bfield->bz, bnr, bnphi, bnz, NATURALBC, PERIODICBC, NATURALBC,
-        brlim, bphilim, bzlim, bz);
-    err += Spline3D_init(
-        &bfield->bphi, bnr, bnphi, bnz, NATURALBC, PERIODICBC, NATURALBC,
-        brlim, bphilim, bzlim, bphi);
+
+    /* On failure, free what was allocated before it. A failed Spline3D_init
+       has already freed its own data. */
+    if (Spline3D_init(
+            &bfield->psi, pnr, pnphi, pnz, NATURALBC, PERIODICBC, NATURALBC,
+            prlim, pphilim, pzlim, psi))
+    {
+        return 1;
+    }
+    if (Spline3D_init(
+            &bfield->br, bnr, bnphi, bnz, NATURALBC, PERIODICBC, NATURALBC,
+            brlim, bphilim, bzlim, br))
+    {
+        free(bfield->psi.c);
+        return 1;
+    }
+    if (Spline3D_init(
+            &bfield->bz, bnr, bnphi, bnz, NATURALBC, PERIODICBC, NATURALBC,
+            brlim, bphilim, bzlim, bz))
+    {
+        free(bfield->psi.c);
+        free(bfield->br.c);
+        return 1;
+    }
+    if (Spline3D_init(
+            &bfield->bphi, bnr, bnphi, bnz, NATURALBC, PERIODICBC, NATURALBC,
+            brlim, bphilim, bzlim, bphi))
+    {
+        free(bfield->psi.c);
+        free(bfield->br.c);
+        free(bfield->bz.c);
+        return 1;
+    }
 
     real *c1 = (real *)malloc(naxis * sizeof(real));
     real *c2 = (real *)malloc(naxis * sizeof(real));
@@ -40,6 +60,10 @@ int BfieldStellarator_init(
     {
         free(c1);
         free(c2);
+        free(bfield->psi.c);
+        free(bfield->br.c);
+        free(bfield->bz.c);
+        free(bfield->bphi.c);
         return 1;
     }
     for (size_t i = 0; i < naxis; i++)
@@ -49,7 +73,7 @@ int BfieldStellarator_init(
     }
     Linear1D_init(&bfield->axisr, naxis, PERIODICBC, axislim, c1);
     Linear1D_init(&bfield->axisz, naxis, PERIODICBC, axislim, c2);
-    return err;
+    return 0;
 }
 
 void BfieldStellarator_free(BfieldStellarator *bfield)
@@ -58,6 +82,8 @@ void BfieldStellarator_free(BfieldStellarator *bfield)
     free(bfield->br.c);
     free(bfield->bphi.c);
     free(bfield->bz.c);
+    free(bfield->axisr.c);
+    free(bfield->axisz.c);
 }
 
 void BfieldStellarator_offload(BfieldStellarator *bfield)
