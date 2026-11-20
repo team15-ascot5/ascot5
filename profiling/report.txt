@@ -1,0 +1,57 @@
+ASCOT5 profiling notes (sprint 1)
+
+# Hardware and software
+Profiler: AMD uProf
+CPU: Ryzen 9 5900X
+
+We only examined running ASCOT5 on the CPU.
+
+# Installing the profiler (Linux)
+
+Installation requires accepting the EULA online
+https://www.amd.com/en/developer/uprof.html
+The profiler itself is provided compiled, but the optional kernel module is to be compiled from source with provided scripts.
+
+This optional kernel module is required to collect further metrics. I was unable to install this, as it gave multiple compile errors. Perhaps my kernel is too new?
+Future recommendation: Use an officially supported Linux distribution with a kernel confirmed to work.
+
+Without the driver, is is required to set the following:
+echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
+This is typically not set to allow perf_event collection, which prevented Intel VTune from being ran on university machines.
+
+# Benchmark case
+The client provided a benchmark use case which is attached to this report and can be found in the branch `feature/profiling` of our fork. The marker count was set such that the simulation took around 30 seconds to run on the hardware including the loading, which came to be ~4m10s of CPU time)
+
+The benchmark contained cases for three modes, gc-fixed, gyro-orbit, and gc-adaptive, the last of which was said to be bugged. We only tested gyro-orbit.
+
+# Compiling
+libascot.so was compiled with 'CFLAGS+=" -g -march=native" make -j' from the feature/113... branch.
+
+# Metrics
+
+## Hotspots
+../AMDuProf_Linux_x64_6.0.1520/bin/AMDuProfCLI collect --config hotspots -o /tmp/uprof python3 profiling/main.py
+(The output of these are is viewed with the GUI tool bin/AMDuProf)
+
+CSV of the hot functions (>10% CPU time):
+Functions,Modules,CPU_TIME(s)
+Spline2D_eval_f_df,libascot.so,25.9560%
+DiagHist_update_go,libascot.so,18.4617%
+step_go_vpa,libascot.so,13.6548%
+Spline2D_eval_f,libascot.so,11.6027%
+
+The profiler collects which exact machine instructions took what share of time, and maps that to the exact lines of C source. Future work could focus on looking at why the individual lines that take the most time do so.
+
+The preset "collect --config assess" shows IPC (instructions completed per CPU cycle) and CPI (cycles to complete an instruction) metrics per line of C.
+
+## Memory
+The preset "collect --config memory" seems to only report L1 misses on my configuration. It shows how many cycles are lost to waiting for those line by line. I was unable to get it to show L3 misses specifically.
+
+# Paths to take
+Is the spline interpolation done optimally? At the end of Spline2D_eval_f_df, where the arithmetic happens, IPC is mostly around 1,5. Sometimes the same computations are used repeatedly, but not stored anywhere. Perhaps just by ordering the arithmetic differently, the IPC could be improved with pipelining and value reuse. The same can be assumed to hold for the other spline evaluation functions. The downside of this is that it would decrease the readability of the code, and it would not necessarily help on the GPU.
+
+# Future work
+## Vectorisation report.
+GCC and Clang are both able to generate reports on what loops were unable to be vectorised and why. This should be used with the profiling data to focus on analysing the most performance-critical loops.
+
+## Look at the GPU side

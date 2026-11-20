@@ -4,8 +4,8 @@ import numpy as np
 from a5py import Ascot, SimulationOptions
 from a5py.templates import PremadeMagneticField, TransmuteAnalyticalBfieldToSplines
 
-MARKER_COUNT = 500   # increase for larger simulation
-MAX_MILEAGE = 5e-4   # increase for longer simulation
+MARKER_COUNT = 50000   # increase for larger simulation
+MAX_MILEAGE = 5e-5   # increase for longer simulation
 
 ascot = Ascot()
 
@@ -72,7 +72,7 @@ run = ascot.simulate(params=options)
 # Check that all markers reach the end
 # print(run.getstate("time", state="end"))
 
-# import matplotlib.pyplot as plt
-# dist = run.getdist(0, ("r"))
-# plt.plot(dist.distribution)
-# plt.show()
+import matplotlib.pyplot as plt
+dist = run.getdist(0, ("r"))
+plt.plot(dist.distribution)
+plt.savefig('/tmp/plot.png')
