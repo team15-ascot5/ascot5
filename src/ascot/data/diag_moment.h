@@ -49,4 +49,26 @@ void DiagMoment_update_go(
  */
 void DiagMoment_update_gc(
     DiagMoment *moment, Bfield *bfield, MarkerGuidingCenter *mrk_f, MarkerGuidingCenter *mrk_i);
+
+/**
+ * Update collisional energy moments for gyro-orbit markers. 
+ *
+ * @param moment The moment data.
+ * @param mrk_f Marker at the end of the time-step.
+ * @param mrk_c Marker before collisions in the time step.
+ * @param mrk_i Marker at the beginning of the time-step.
+ */
+void DiagMoment_update_col_go(
+    DiagMoment *moment, MarkerGyroOrbit *mrk_f, MarkerGyroOrbit *mrk_c, MarkerGyroOrbit *mrk_i);
+
+/**
+ * Update collisional energy moments for guiding-center markers. 
+ *
+ * @param moment The moment data.
+ * @param mrk_f Marker at the end of the time-step.
+ * @param mrk_c Marker before collisions in the time step.
+ * @param mrk_i Marker at the beginning of the time-step.
+ */
+void DiagMoment_update_col_gc(
+    DiagMoment *moment, MarkerGuidingCenter *mrk_f, MarkerGuidingCenter *mrk_c, MarkerGuidingCenter *mrk_i);
 #endif

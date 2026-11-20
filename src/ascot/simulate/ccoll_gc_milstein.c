@@ -257,11 +257,12 @@ void mccc_gc_milstein(
 
                 p->rho[i] = rho[0];
 
-                Bnorm = math_normc(B_dB[0], B_dB[1], B_dB[1]);
+                Bnorm = math_normc(B_dB[0], B_dB[1], B_dB[2]);
 
                 p->r[i] = Xout_rpz[0];
                 p->z[i] = Xout_rpz[2];
                 p->ppar[i] = physlib_gc_ppar(pout, xiout);
+                p->mu[i] = physlib_gc_mu(p->mass, pout, xiout, Bnorm);
 
                 /* Evaluate phi and theta angles so that they are cumulative */
                 real axisrz[2];

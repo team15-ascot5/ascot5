@@ -120,9 +120,9 @@ void DiagMoment_update_go(
         computed_moments[MOMENT_ENERGYDENSITYPAR] = ekin_f * xi_f * xi_f * marker_weight_w * delta_t; /**Parallel energy density W_e_|| = E*xi^2*w*\delta t */
         computed_moments[MOMENT_JPAR] = charge_f * vpar_f * marker_weight_w * delta_t; /**Parallel current W_j_|| = e*v_||*w*\delta t */
         computed_moments[MOMENT_JTOR] = charge_f * vtor_f * marker_weight_w * delta_t; /**Toroidal current W_j = e*v*w*\delta t*/
-        computed_moments[MOMENT_CPDEP] = -delta_e * marker_weight_w; /**Collisional power deposition to plasma W_P,c=-\delta E_d*w */
+        computed_moments[MOMENT_CPDEP] = 0;/**Set by separate update function.*/
         computed_moments[MOMENT_TORTORQ] = -charge_f * delta_psi * marker_weight_w; /**Toroidal torque j x B, W_\tau,jxB=-e*\delta\psi_p*w */
-        computed_moments[MOMENT_TORCTORQ] = -mrk_f->r[i]*(delta_ppar*mrk_f->bphi[i]/bnorm_f) * marker_weight_w; /**Toroidal collision torque W_p,c=-R*(\delta\p_||*b_\phi/|B|) */
+        computed_moments[MOMENT_TORCTORQ] = -mrk_f->r[i]*(delta_ppar*mrk_f->bphi[i]/bnorm_f) * marker_weight_w; 
         computed_moments[MOMENT_TORCTORQPPHI] = -delta_P_phi * marker_weight_w; /**Toroidal torque from changes in toroidal canonical momentum W_\tau,p_\phi = -e*\delta P_\phi*w*/
 
         real rho_f = mrk_f->rho[i];
@@ -131,20 +131,19 @@ void DiagMoment_update_go(
         valid = valid && (mrk_i->running[i]
             && rho_f >= axis->min && rho_f <= axis->max
             && rho_i >= axis->min && rho_i <= axis->max);
+        if(!valid) continue;
 
-        if(valid){
-            size_t bin_index_f = math_bin_index(rho_f, axis->n, axis->min, axis->max);
-            size_t bin_index_i = math_bin_index(rho_i, axis->n, axis->min, axis->max);
+        size_t bin_index_f = math_bin_index(rho_f, axis->n, axis->min, axis->max);
+        size_t bin_index_i = math_bin_index(rho_i, axis->n, axis->min, axis->max);
 
-            size_t start = bin_index_f < bin_index_i ? bin_index_f: bin_index_i;
-            size_t end = bin_index_f > bin_index_i ? bin_index_f: bin_index_i;
-            real bin_weight = 1 / (real)(end-start+1);
-            for(size_t final_bin_index = start; final_bin_index <= end; final_bin_index++){
-                for(size_t moment_index = 0; moment_index < MOMENT_NUM; moment_index++)
-                {
-                    GPU_ATOMIC
-                    moment->values[final_bin_index*MOMENT_NUM + moment_index] += computed_moments[moment_index] * bin_weight;
-                }
+        size_t start = bin_index_f < bin_index_i ? bin_index_f: bin_index_i;
+        size_t end = bin_index_f > bin_index_i ? bin_index_f: bin_index_i;
+        real bin_weight = 1 / (real)(end-start+1);
+        for(size_t final_bin_index = start; final_bin_index <= end; final_bin_index++){
+            for(size_t moment_index = 0; moment_index < MOMENT_NUM; moment_index++)
+            {
+                GPU_ATOMIC
+                moment->values[final_bin_index*MOMENT_NUM + moment_index] += computed_moments[moment_index] * bin_weight;
             }
         }
     }
@@ -235,9 +234,9 @@ void DiagMoment_update_gc(
         computed_moments[MOMENT_ENERGYDENSITYPAR] = ekin_f * xi_f * xi_f * marker_weight_w * delta_t; /**Parallel energy density W_e_|| = E*xi^2*w*\delta t */
         computed_moments[MOMENT_JPAR] = charge_f * vpar_f * marker_weight_w * delta_t; /**Parallel current W_j_|| = e*v_||*w*\delta t */
         computed_moments[MOMENT_JTOR] = charge_f * vtor_f * marker_weight_w * delta_t; /**Toroidal current W_j = e*v*w*\delta t*/
-        computed_moments[MOMENT_CPDEP] = -delta_e * marker_weight_w; /**Collisional power deposition to plasma W_P,c=-\delta E_d*w */
+        computed_moments[MOMENT_CPDEP] = 0;/**Computed by update_col function*/
         computed_moments[MOMENT_TORTORQ] = -charge_f * delta_psi * marker_weight_w; /**Toroidal torque j x B, W_\tau,jxB=-e*\delta\psi_p*w */
-        computed_moments[MOMENT_TORCTORQ] = -mrk_f->r[i]*(delta_ppar*mrk_f->bphi[i]/bnorm_f) * marker_weight_w; /**Toroidal collision torque W_p,c=-R*(\delta\p_||*b_\phi/|B|) */
+        computed_moments[MOMENT_TORCTORQ] = 0;/**Computed by update_col function*/
         computed_moments[MOMENT_TORCTORQPPHI] = -delta_P_phi * marker_weight_w; /**Toroidal torque from changes in toroidal canonical momentum W_\tau,p_\phi = -e*\delta P_\phi*w*/
 
         real rho_f = mrk_f->rho[i];
@@ -246,22 +245,112 @@ void DiagMoment_update_gc(
         valid = valid && (mrk_i->running[i]
             && rho_f >= axis->min && rho_f <= axis->max
             && rho_i >= axis->min && rho_i <= axis->max);
+        if(!valid) continue;
 
+        size_t bin_index_f = math_bin_index(rho_f, axis->n, axis->min, axis->max);
+        size_t bin_index_i = math_bin_index(rho_i, axis->n, axis->min, axis->max);
 
-        if(valid){
-            size_t bin_index_f = math_bin_index(rho_f, axis->n, axis->min, axis->max);
-            size_t bin_index_i = math_bin_index(rho_i, axis->n, axis->min, axis->max);
-
-            size_t start = bin_index_f < bin_index_i ? bin_index_f: bin_index_i;
-            size_t end = bin_index_f > bin_index_i ? bin_index_f: bin_index_i;
-            real bin_weight = 1 / (real)(end-start+1);
-            for(size_t final_bin_index = start; final_bin_index <= end; final_bin_index++){
-                for(size_t moment_index = 0; moment_index < MOMENT_NUM; moment_index++)
-                {
-                    GPU_ATOMIC
-                    moment->values[final_bin_index*MOMENT_NUM + moment_index] += computed_moments[moment_index] * bin_weight;
-                }
+        size_t start = bin_index_f < bin_index_i ? bin_index_f: bin_index_i;
+        size_t end = bin_index_f > bin_index_i ? bin_index_f: bin_index_i;
+        real bin_weight = 1 / (real)(end-start+1);
+        for(size_t final_bin_index = start; final_bin_index <= end; final_bin_index++){
+            for(size_t moment_index = 0; moment_index < MOMENT_NUM; moment_index++)
+            {
+                GPU_ATOMIC
+                moment->values[final_bin_index*MOMENT_NUM + moment_index] += computed_moments[moment_index] * bin_weight;
             }
+        }
+    }
+}
+
+void DiagMoment_update_col_go(
+    DiagMoment *moment, MarkerGyroOrbit *mrk_f, MarkerGyroOrbit *mrk_c,
+    MarkerGyroOrbit *mrk_i)
+{
+    GPU_PARALLEL_LOOP_ALL_LEVELS
+    for (size_t i = 0; i < mrk_f->size; i++)
+    {
+        HistAxis *axis = &(moment->axis);
+
+        /*Kinetic energy after and before the collision step*/
+        real pnorm_f = math_normc(mrk_f->p_r[i], mrk_f->p_phi[i], mrk_f->p_z[i]);
+        real pnorm_c = math_normc(mrk_c->p_r[i], mrk_c->p_phi[i], mrk_c->p_z[i]);
+        real ekin_f = physlib_Ekin_pnorm(mrk_f->mass, pnorm_f);
+        real ekin_c = physlib_Ekin_pnorm(mrk_c->mass, pnorm_c);
+        real delta_E = ekin_f - ekin_c;
+        real delta_p_phi = mrk_f->p_phi[i]-mrk_c->p_phi[i];
+
+        real rho_f = mrk_f->rho[i];
+        real rho_c = mrk_c->rho[i];
+
+        /*Rejected or finished steps do not advance time*/
+        int valid = mrk_i->running[i] && mrk_f->time[i] != mrk_i->time[i]
+            && rho_f >= axis->min && rho_f <= axis->max
+            && rho_c >= axis->min && rho_c <= axis->max;
+
+        if(!valid) continue;
+        /**Collisional power deposition to plasma W_P,c=-\delta E_c*w */
+        real cpdep = -delta_E * mrk_f->weight[i];
+        /**Toroidal collision torque W_p,c=-R*\delta\p_\phi*w */
+        real torctorq = -mrk_f->r[i] * (delta_p_phi)*mrk_f->weight[i];
+
+        size_t bin_index_f = math_bin_index(rho_f, axis->n, axis->min, axis->max);
+        size_t bin_index_c = math_bin_index(rho_c, axis->n, axis->min, axis->max);
+
+        size_t start = bin_index_f < bin_index_c ? bin_index_f: bin_index_c;
+        size_t end = bin_index_f > bin_index_c ? bin_index_f: bin_index_c;
+        real bin_weight = 1 / (real)(end-start+1);
+        for(size_t final_bin_index = start; final_bin_index <= end; final_bin_index++){
+            GPU_ATOMIC
+            moment->values[final_bin_index*MOMENT_NUM + MOMENT_CPDEP] += cpdep * bin_weight;
+            moment->values[final_bin_index*MOMENT_NUM + MOMENT_TORCTORQ] += torctorq * bin_weight;
+        }
+    }
+}
+
+void DiagMoment_update_col_gc(
+    DiagMoment *moment, MarkerGuidingCenter *mrk_f, MarkerGuidingCenter *mrk_c,
+    MarkerGuidingCenter *mrk_i)
+{
+    GPU_PARALLEL_LOOP_ALL_LEVELS
+    for (size_t i = 0; i < mrk_f->size; i++)
+    {
+        HistAxis *axis = &(moment->axis);
+
+        /*Kinetic energy after and before the collision step*/
+        real bnorm_f = math_normc(mrk_f->br[i], mrk_f->bphi[i], mrk_f->bz[i]);
+        real bnorm_c = math_normc(mrk_c->br[i], mrk_c->bphi[i], mrk_c->bz[i]);
+        real ekin_f = physlib_Ekin_pnorm(mrk_f->mass,
+            physlib_gc_p(mrk_f->mass, mrk_f->mu[i], mrk_f->ppar[i], bnorm_f));
+        real ekin_c = physlib_Ekin_pnorm(mrk_c->mass,
+            physlib_gc_p(mrk_c->mass, mrk_c->mu[i], mrk_c->ppar[i], bnorm_c));
+        real delta_E = ekin_f - ekin_c;
+        real delta_ppar = mrk_f->ppar[i] - mrk_c->ppar[i]; 
+
+        real rho_f = mrk_f->rho[i];
+        real rho_c = mrk_c->rho[i];
+
+        /*Rejected or finished steps do not advance time*/
+        int valid = mrk_i->running[i] && mrk_f->time[i] != mrk_i->time[i]
+            && rho_f >= axis->min && rho_f <= axis->max
+            && rho_c >= axis->min && rho_c <= axis->max;
+
+        if(!valid) continue;
+        /**Collisional power deposition to plasma W_P,c=-\delta E_c*w */
+        real cpdep = -delta_E * mrk_f->weight[i];
+        /**Toroidal collision torque W_p,c=-R*(\delta\p_||*b_\phi/|B|)*w */
+        real torctorq = -mrk_f->r[i] * (delta_ppar*mrk_f->bphi[i] / bnorm_f)*mrk_f->weight[i];
+
+        size_t bin_index_f = math_bin_index(rho_f, axis->n, axis->min, axis->max);
+        size_t bin_index_c = math_bin_index(rho_c, axis->n, axis->min, axis->max);
+
+        size_t start = bin_index_f < bin_index_c ? bin_index_f: bin_index_c;
+        size_t end = bin_index_f > bin_index_c ? bin_index_f: bin_index_c;
+        real bin_weight = 1 / (real)(end-start+1);
+        for(size_t final_bin_index = start; final_bin_index <= end; final_bin_index++){
+            GPU_ATOMIC
+            moment->values[final_bin_index*MOMENT_NUM + MOMENT_CPDEP] += cpdep * bin_weight;
+            moment->values[final_bin_index*MOMENT_NUM + MOMENT_TORCTORQ] += torctorq * bin_weight;
         }
     }
 }

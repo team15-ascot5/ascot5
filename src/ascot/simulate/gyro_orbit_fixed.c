@@ -7,6 +7,7 @@
 #include "coulomb_collisions.h"
 #include "data/bfield.h"
 #include "data/diag.h"
+#include "data/diag_moment.h"
 #include "data/efield.h"
 #include "data/marker.h"
 #include "data/plasma.h"
@@ -92,9 +93,12 @@ int simulate_go_fixed(Simulation *sim, MarkerQueue *pq, size_t vector_size)
 
     MarkerGyroOrbit p;  // This array holds current states
     MarkerGyroOrbit p0; // This array stores previous states
+    MarkerGyroOrbit p_col;  //This array holds states before collisions
     if (MarkerGyroOrbit_allocate(&p, vector_size))
         return 1;
     if (MarkerGyroOrbit_allocate(&p0, vector_size))
+        return 1;
+    if (MarkerGyroOrbit_allocate(&p_col, vector_size))
         return 1;
 
     MarkerGuidingCenter gc_f, gc_i;
@@ -128,6 +132,7 @@ int simulate_go_fixed(Simulation *sim, MarkerQueue *pq, size_t vector_size)
      */
     MarkerGyroOrbit_offload(&p);
     MarkerGyroOrbit_offload(&p0);
+    MarkerGyroOrbit_offload(&p_col);
     GPU_MAP_TO_DEVICE(hin [0:vector_size])
     while (n_running > 0)
     {
@@ -176,6 +181,10 @@ int simulate_go_fixed(Simulation *sim, MarkerQueue *pq, size_t vector_size)
         /* Euler-Maruyama for Coulomb collisions */
         if (sim->options->enable_coulomb_collisions)
         {
+            GPU_PARALLEL_LOOP_ALL_LEVELS
+            for(size_t i = 0; i < vector_size; i++){
+                MarkerGyroOrbit_copy(&p_col, &p, i);
+            }
             mccc_go_euler(&p, hin, &sim->plasma, sim->mccc_data);
         }
         /* Atomic reactions */
@@ -210,6 +219,9 @@ int simulate_go_fixed(Simulation *sim, MarkerQueue *pq, size_t vector_size)
         {
             /* Record particle coordinates */
             Diag_update_go(&sim->diagnostics, &sim->bfield, &p, &p0);
+            if(sim->diagnostics.moment && sim->options->enable_coulomb_collisions){
+                DiagMoment_update_col_go(sim->diagnostics.moment, &p, &p_col, &p0);
+            }
         }
         else
         {
@@ -277,5 +289,6 @@ int simulate_go_fixed(Simulation *sim, MarkerQueue *pq, size_t vector_size)
 
     MarkerGyroOrbit_deallocate(&p);
     MarkerGyroOrbit_deallocate(&p0);
+    MarkerGyroOrbit_deallocate(&p_col);
     return 0;
 }

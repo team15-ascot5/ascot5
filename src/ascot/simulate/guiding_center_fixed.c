@@ -5,6 +5,7 @@
 #include "coulomb_collisions.h"
 #include "data/bfield.h"
 #include "data/diag.h"
+#include "data/diag_moment.h"
 #include "data/efield.h"
 #include "data/marker.h"
 #include "data/plasma.h"
@@ -99,11 +100,14 @@ int simulate_gc_fixed(Simulation *sim, MarkerQueue *pq, size_t vector_size)
 
     real cputime, cputime_last; // Global cpu time: recent and previous record
 
-    MarkerGuidingCenter p;  // This array holds current states
-    MarkerGuidingCenter p0; // This array stores previous states
+    MarkerGuidingCenter p;     // This array holds current states
+    MarkerGuidingCenter p0;    // This array stores previous states
+    MarkerGuidingCenter p_col; // This array stores states before collisions
     if (MarkerGuidingCenter_allocate(&p, vector_size))
         return 1;
     if (MarkerGuidingCenter_allocate(&p0, vector_size))
+        return 1;
+    if (MarkerGuidingCenter_allocate(&p_col, vector_size))
         return 1;
 
     rfof_marker rfof_mrk; // RFOF specific data
@@ -136,6 +140,7 @@ int simulate_gc_fixed(Simulation *sim, MarkerQueue *pq, size_t vector_size)
      */
     MarkerGuidingCenter_offload(&p);
     MarkerGuidingCenter_offload(&p0);
+    MarkerGuidingCenter_offload(&p_col);
     while (n_running > 0)
     {
 
@@ -186,6 +191,10 @@ int simulate_gc_fixed(Simulation *sim, MarkerQueue *pq, size_t vector_size)
         /* Euler-Maruyama method for collisions */
         if (sim->options->enable_coulomb_collisions)
         {
+            GPU_PARALLEL_LOOP_ALL_LEVELS
+            for(size_t i = 0; i < vector_size; i++){
+                MarkerGuidingCenter_copy(&p_col, &p, i);
+            }
             mccc_gc_euler(
                 &p, hin, &sim->bfield, &sim->plasma, sim->mccc_data);
         }
@@ -254,6 +263,9 @@ int simulate_gc_fixed(Simulation *sim, MarkerQueue *pq, size_t vector_size)
 
         /* Update diagnostics */
         Diag_update_gc(&sim->diagnostics, &sim->bfield, &p, &p0);
+        if(sim->diagnostics.moment && sim->options->enable_coulomb_collisions){
+            DiagMoment_update_col_gc(sim->diagnostics.moment, &p, &p_col, &p0);
+        }
 
 /* Update running particles */
 #ifdef GPU
@@ -299,6 +311,7 @@ int simulate_gc_fixed(Simulation *sim, MarkerQueue *pq, size_t vector_size)
 
     MarkerGuidingCenter_deallocate(&p);
     MarkerGuidingCenter_deallocate(&p0);
+    MarkerGuidingCenter_deallocate(&p_col);
 
     /* Deallocate rfof structs */
     if (sim->options->enable_icrh)
